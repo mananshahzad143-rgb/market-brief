@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Daily Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#14202B;--paper:#E9EDF0;--card:#F5F7F9;--line:#C3CCD4;--muted:#5C6B7A;
+  --brass:#B07D2B;--teal:#12726B;--warn:#A6412E;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;--sans:'IBM Plex Sans',system-ui,sans-serif;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;
+  line-height:1.55;padding:24px 16px calc(48px + env(safe-area-inset-bottom))}
+.wrap{max-width:760px;margin:0 auto}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--mono);font-weight:500;font-size:25px;letter-spacing:-.01em;margin:8px 0 2px}
+h2{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);font-weight:500;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px;margin-bottom:16px}
+.brief p{margin:0 0 12px}.brief p:last-child{margin-bottom:0}
+.brief b{font-family:var(--mono);font-weight:500}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0}
+.tag{font-family:var(--mono);font-size:11px;padding:5px 9px;border-radius:3px;
+  border:1px solid var(--line);background:var(--card);white-space:nowrap}
+.tag.up{color:var(--brass);border-color:var(--brass)}
+.tag.dn{color:var(--teal);border-color:var(--teal)}
+.grid{display:grid;gap:10px;grid-template-columns:1fr}
+@media(min-width:560px){.grid{grid-template-columns:1fr 1fr}}
+.row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;
+  border-bottom:1px solid var(--line);font-size:13px}
+.row:last-child{border-bottom:none}
+.row span:last-child{font-family:var(--mono);text-align:right;white-space:nowrap}
+.coin{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:14px}
+.coin h3{font-family:var(--mono);font-size:15px;font-weight:500;margin:0;
+  display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.px{font-family:var(--mono);font-size:19px;margin:6px 0 2px}
+.chg{font-family:var(--mono);font-size:12px}
+.pos{color:var(--teal)}.neg{color:var(--warn)}
+button{font-family:var(--mono);font-size:14px;padding:12px 16px;border-radius:4px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;flex:1;min-width:88px}
+button:active{background:var(--paper)}
+button.sel{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin:8px 0 6px}
+.bar i{display:block;height:100%;border-radius:3px}
+.tiny{font-size:12px;color:var(--muted);line-height:1.5}
+.err{color:var(--warn);font-family:var(--mono);font-size:12px}
+.hist{font-family:var(--mono);font-size:12px;padding:8px 0;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:10px}
+.spark{display:block;margin-top:8px}
+.note{border-left:3px solid var(--brass);padding-left:12px;margin-top:14px}
+.status{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Daily brief</div>
+  <h1 id="today">Loading…</h1>
+  <div class="status" id="status">Fetching…</div>
+  <div class="tags" id="tags"></div>
+  <div class="card brief" id="brief"><p class="tiny">Reading the tape…</p></div>
+
+  <div class="card"><h2>Macro · automatic</h2><div id="macrorows"></div></div>
+
+  <h2 style="margin-top:26px">Crypto · live</h2>
+  <div class="grid" id="coins"></div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Fragility</h2>
+    <div class="bar"><i id="fragbar" style="width:0%;background:var(--teal)"></i></div>
+    <div style="display:flex;justify-content:space-between" class="tiny">
+      <span>Resilient</span><span id="fraglabel">—</span><span>Fragile</span></div>
+    <div id="fragrows" style="margin-top:14px"></div>
+    <div class="note tiny">Fragility measures how dry the forest is, not when lightning strikes.
+      It should change position size, never generate an entry or exit.</div>
+  </div>
+
+  <div class="card"><h2>What followed days like this</h2>
+    <div id="analogue"><div class="tiny">Runs once the backend is publishing data.</div></div></div>
+
+  <div class="card"><h2>Today's question</h2>
+    <div id="q" style="margin-bottom:4px">—</div>
+    <div class="btns" id="qbtns"></div>
+    <div class="tiny" id="qnote" style="margin-top:12px"></div></div>
+
+  <div class="card"><h2>Your record</h2>
+    <div id="calib" class="tiny">Nothing logged yet.</div>
+    <div id="hist" style="margin-top:12px"></div>
+    <div class="btns"><button id="resolve">Score an open prediction</button></div></div>
+
+  <div class="tiny" style="margin-top:24px;padding-top:16px;border-top:1px solid var(--line)">
+    This measures how unusual today is and which relationships are currently working. It does not
+    forecast prices. Crypto statistics rest on roughly one and a half cycles, so treat them with far
+    less confidence than the macro series, which have twenty years behind them.
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────────────────────
+   Set this to your published data.json once the Action is running.
+   Example:
+   https://raw.githubusercontent.com/YOURNAME/market-brief/main/data.json
+   Leave blank and the page falls back to fetching live in the browser.
+   ───────────────────────────────────────────────────────────── */
+const DATA_URL = "";
+
+const mem={};
+const store={
+  async get(k){try{if(window.storage){const r=await window.storage.get(k);return r?JSON.parse(r.value):null;}}catch(e){}
+    try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){}return mem[k]??null;},
+  async set(k,v){try{if(window.storage){await window.storage.set(k,JSON.stringify(v));return;}}catch(e){}
+    try{localStorage.setItem(k,JSON.stringify(v));return;}catch(e){}mem[k]=v;}
+};
+
+const mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
+const sd=a=>{const m=mean(a);return Math.sqrt(mean(a.map(x=>(x-m)**2)));};
+const z=(v,a)=>{const s=sd(a);return s?(v-mean(a))/s:0;};
+function ema(a,n){const k=2/(n+1);let e=a[0];for(let i=1;i<a.length;i++)e=a[i]*k+e*(1-k);return e;}
+function rsiSeries(c,n=14){const o=[];let g=0,l=0;
+  for(let i=1;i<=n;i++){const d=c[i]-c[i-1];d>=0?g+=d:l-=d;}g/=n;l/=n;
+  o.push(100-100/(1+(l===0?100:g/l)));
+  for(let i=n+1;i<c.length;i++){const d=c[i]-c[i-1];
+    g=(g*(n-1)+(d>0?d:0))/n;l=(l*(n-1)+(d<0?-d:0))/n;o.push(100-100/(1+(l===0?100:g/l)));}
+  return o;}
+const logret=a=>a.slice(1).map((v,i)=>Math.log(v/a[i]));
+const annVol=c=>sd(logret(c.slice(-90)))*Math.sqrt(365)*100;
+function beta(a,b){const n=Math.min(a.length,b.length,90);
+  const ra=logret(a.slice(-n)),rb=logret(b.slice(-n)),ma=mean(ra),mb=mean(rb);
+  let cov=0,vb=0;for(let i=0;i<rb.length;i++){cov+=(ra[i]-ma)*(rb[i]-mb);vb+=(rb[i]-mb)**2;}
+  return vb?cov/vb:0;}
+function corr(a,b){const ma=mean(a),mb=mean(b);let n=0,d1=0,d2=0;
+  for(let i=0;i<a.length;i++){n+=(a[i]-ma)*(b[i]-mb);d1+=(a[i]-ma)**2;d2+=(b[i]-mb)**2;}
+  return n/Math.sqrt(d1*d2);}
+
+/* proxy chain defeats FRED's CORS block; first success wins */
+const PROXIES=[u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,u=>`https://r.jina.ai/${u}`,u=>u];
+async function tough(url){
+  for(const p of PROXIES){
+    try{const r=await fetch(p(url),{cache:'no-store'});
+      if(!r.ok)continue;const t=await r.text();
+      if(t&&t.length>20&&t.includes(','))return t;}catch(e){}
+  }
+  throw new Error('unreachable');
+}
+async function jget(u){const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json();}
+
+const FRED_IDS=['DFII10','DGS10','T10YIE','T10Y2Y','DTWEXBGS','DCOILWTICO','DFF','DGS2',
+  'WALCL','RRPONTSYD','WTREGEN'];
+async function loadFred(){
+  const csv=await tough(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${FRED_IDS.join(',')}`);
+  const lines=csv.trim().split('\n'),head=lines[0].split(',').map(s=>s.trim().replace(/"/g,''));
+  const out={};head.slice(1).forEach(h=>out[h]=[]);
+  for(const ln of lines.slice(1)){const p=ln.split(',');
+    head.slice(1).forEach((h,i)=>{const v=parseFloat(p[i+1]);if(!isNaN(v))out[h].push(v);});}
+  return out;
+}
+
+const ASSETS=[{id:'bitcoin',sym:'BTC',name:'Bitcoin'},{id:'ethereum',sym:'ETH',name:'Ethereum'},
+  {id:'solana',sym:'SOL',name:'Solana'},{id:'oasis-network',sym:'ROSE',name:'Oasis'}];
+const CG='https://api.coingecko.com/api/v3';
+const S={coins:{},fng:null,fred:null,gold:null,deriv:{}};
+
+async function loadCrypto(){
+  for(const a of ASSETS){
+    try{const d=await jget(`${CG}/coins/${a.id}/market_chart?vs_currency=usd&days=365`);
+      const c=d.prices.map(p=>p[1]),rs=rsiSeries(c);
+      S.coins[a.sym]={...a,closes:c,price:c[c.length-1],rsi:rs[rs.length-1],
+        rsiZ:z(rs[rs.length-1],rs),ema200:c.length>=200?ema(c.slice(-200),200):null,
+        vol:annVol(c),d7:(c[c.length-1]/c[c.length-8]-1)*100,d30:(c[c.length-1]/c[c.length-31]-1)*100};
+    }catch(e){S.coins[a.sym]={...a,err:1};}
+    await new Promise(r=>setTimeout(r,1500));
+  }
+  const b=S.coins.BTC&&S.coins.BTC.closes;
+  if(b)['ETH','SOL','ROSE'].forEach(s=>{const c=S.coins[s];if(c&&c.closes)c.beta=beta(c.closes,b);});
+}
+async function loadGold(){
+  try{const d=await jget(`${CG}/coins/pax-gold/market_chart?vs_currency=usd&days=365`);
+    const c=d.prices.map(p=>p[1]);
+    S.gold={closes:c,price:c[c.length-1],d30:(c[c.length-1]/c[c.length-31]-1)*100};}catch(e){}
+}
+async function loadFNG(){
+  try{const d=await jget('https://api.alternative.me/fng/?limit=180');
+    S.fng={now:+d.data[0].value,label:d.data[0].value_classification,hist:d.data.map(x=>+x.value)};}catch(e){}
+}
+async function loadDerivs(){
+  for(const s of ['BTCUSDT','ETHUSDT']){
+    try{const[p,o]=await Promise.all([
+      jget(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${s}`),
+      jget(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${s}`)]);
+      S.deriv[s]={funding:+p.lastFundingRate*100,oi:+o.openInterest};}catch(e){S.deriv[s]={err:1};}}
+}
+
+const last=k=>S.fred&&S.fred[k]&&S.fred[k].length?S.fred[k][S.fred[k].length-1]:null;
+const regimeOf=y=>y<-0.5?['Deeply negative','dn']:y<0?['Negative','dn']:
+  y<1?['Near zero','dn']:y<2?['Positive','up']:['High','up'];
+
+function netLiquidity(){
+  const W=S.fred&&S.fred.WALCL,R=S.fred&&S.fred.RRPONTSYD,T=S.fred&&S.fred.WTREGEN;
+  if(!W||!R||!T||!W.length||!R.length||!T.length)return null;
+  const f=(w,r,t)=>w/1000-r/1000-t/1000;
+  const now=f(W[W.length-1],R[R.length-1],T[T.length-1]);
+  const i=9;
+  if(W.length<i||R.length<i||T.length<i)return{now,chg:0};
+  const prior=f(W[W.length-i],R[R.length-i],T[T.length-i]);
+  return{now,chg:now-prior};
+}
+
+function fragility(){
+  const p=[];
+  if(S.fng)p.push({k:'Fear and Greed',v:`${S.fng.now} ${S.fng.label}`,s:S.fng.now/100});
+  const e=S.coins.ETH;
+  if(e&&e.rsi)p.push({k:'ETH RSI',v:`${e.rsi.toFixed(0)} (${e.rsiZ>0?'+':''}${e.rsiZ.toFixed(1)}σ)`,
+    s:Math.min(1,Math.max(0,(e.rsi-30)/55))});
+  const f=S.deriv.ETHUSDT;
+  if(f&&!f.err)p.push({k:'ETH funding',v:`${f.funding.toFixed(4)}%`,s:Math.min(1,Math.max(0,f.funding/0.05))});
+  const b=S.coins.BTC&&S.coins.BTC.closes;
+  if(b){const bs=logret(b.slice(-30));
+    const cs=['ETH','SOL','ROSE'].map(s=>S.coins[s]).filter(c=>c&&c.closes)
+      .map(c=>corr(logret(c.closes.slice(-30)),bs));
+    if(cs.length)p.push({k:'Correlation to BTC',v:mean(cs).toFixed(2),s:Math.min(1,Math.max(0,mean(cs)))});}
+  const nl=netLiquidity();
+  if(nl)p.push({k:'Net liquidity 8wk',v:`${nl.chg>0?'+':''}${nl.chg.toFixed(2)}tn`,s:nl.chg<0?0.75:0.3});
+  return{score:p.length?mean(p.map(x=>x.s)):0,parts:p};
+}
+
+function spark(v){
+  if(!v||v.length<2)return'';
+  const w=240,h=34,mn=Math.min.apply(null,v),mx=Math.max.apply(null,v),rg=(mx-mn)||1;
+  const pts=v.map((x,i)=>`${(i/(v.length-1))*w},${h-((x-mn)/rg)*h}`).join(' ');
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" width="100%" height="34" preserveAspectRatio="none">
+    <polyline points="${pts}" fill="none" stroke="${v[v.length-1]>=v[0]?'var(--teal)':'var(--warn)'}" stroke-width="1.5"/></svg>`;
+}
+
+function render(){
+  const now=new Date();
+  document.getElementById('today').textContent=
+    now.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'});
+
+  const real=last('DFII10'),nom=last('DGS10'),be=last('T10YIE'),curve=last('T10Y2Y'),
+    dxy=last('DTWEXBGS'),oil=last('DCOILWTICO'),ff=last('DFF'),y2=last('DGS2');
+  const rr=real!=null?regimeOf(real):['—','dn'],rlab=rr[0],rtone=rr[1];
+  const nl=netLiquidity(),expect=(y2!=null&&ff!=null)?y2-ff:null;
+
+  const rows=[],add=(k,v)=>rows.push(`<div class="row"><span>${k}</span><span>${v}</span></div>`);
+  if(real!=null){const rz=z(real,S.fred.DFII10.slice(-500));
+    add('10y real yield',`${real>0?'+':''}${real.toFixed(2)}% · ${rz>0?'+':''}${rz.toFixed(1)}σ`);}
+  if(nom!=null)add('10y nominal',`${nom.toFixed(2)}%`);
+  if(be!=null)add('Breakeven inflation',`${be.toFixed(2)}%`);
+  if(curve!=null)add('10y minus 2y',`${curve>0?'+':''}${curve.toFixed(2)}%${curve<0?' · inverted':''}`);
+  if(expect!=null)add('2y minus fed funds',`${expect>0?'+':''}${expect.toFixed(2)}% · market prices ${expect<0?'cuts':'no cuts'}`);
+  if(dxy!=null)add('Dollar index',dxy.toFixed(2));
+  if(oil!=null)add('WTI crude',`$${oil.toFixed(2)}`);
+  if(S.gold)add('Gold via PAXG',`$${S.gold.price.toFixed(0)} · ${S.gold.d30>0?'+':''}${S.gold.d30.toFixed(1)}% 30d`);
+  if(nl)add('Net liquidity',`$${nl.now.toFixed(2)}tn · ${nl.chg>0?'+':''}${nl.chg.toFixed(2)} 8wk`);
+  document.getElementById('macrorows').innerHTML=rows.join('')||
+    '<div class="err">Macro proxies unreachable right now. Pull to refresh in a minute.</div>';
+
+  const t=[];
+  if(real!=null)t.push({t:`Real yield ${real>0?'+':''}${real.toFixed(2)}% · ${rlab}`,c:rtone});
+  if(nl)t.push({t:`Liquidity ${nl.chg>0?'rising':'falling'}`,c:nl.chg>0?'dn':'up'});
+  if(S.fng)t.push({t:`Fear and Greed ${S.fng.now}`,c:S.fng.now>60?'up':'dn'});
+  const e=S.coins.ETH;
+  if(e&&e.rsi)t.push({t:`ETH RSI ${e.rsi.toFixed(0)}`,c:e.rsi>70?'up':'dn'});
+  document.getElementById('tags').innerHTML=t.map(x=>`<span class="tag ${x.c}">${x.t}</span>`).join('');
+
+  const p=[];
+  if(real!=null){
+    p.push(`<p>The 10 year real yield is <b>${real>0?'+':''}${real.toFixed(2)}%</b>, the ${rlab.toLowerCase()} regime.
+      ${real<1?'Holding a non yielding asset costs little here, historically supportive for gold and, through the same channel, Bitcoin.'
+              :'Patience is being paid, a genuine headwind for anything yielding nothing.'}
+      ${be!=null?` The market prices average inflation of <b>${be.toFixed(2)}%</b> over ten years.`:''}
+      ${curve!=null&&curve<0?' The curve is inverted, which the bond market has historically used to signal a slowdown ahead.':''}</p>`);
+  }
+  if(nl){p.push(`<p>Net liquidity, the Fed balance sheet less reverse repo and the Treasury account, is
+    <b>$${nl.now.toFixed(2)}tn</b>, moving <b>${nl.chg>0?'+':''}${nl.chg.toFixed(2)}tn</b> over eight weeks.
+    ${nl.chg>0?'Rising liquidity tends to lift the top of the risk ladder, where crypto sits.'
+              :'Falling liquidity drains the top of the ladder first.'}</p>`);}
+  if(S.gold&&real!=null){
+    const agrees=(S.gold.d30>0)===(real<1);
+    p.push(`<p>Gold is <b>$${S.gold.price.toFixed(0)}</b>, ${S.gold.d30>0?'up':'down'} <b>${Math.abs(S.gold.d30).toFixed(1)}%</b> in thirty days.
+      ${agrees?'That is consistent with the real yield mechanism.'
+              :'That runs against the real yield mechanism. It fails regularly, and this is one of those stretches.'}</p>`);}
+  if(e&&e.rsi){p.push(`<p>ETH RSI is <b>${e.rsi.toFixed(0)}</b>, <b>${e.rsiZ>0?'+':''}${e.rsiZ.toFixed(1)}σ</b> against its own year.
+    ${Math.abs(e.rsiZ)>2?'A genuine extreme, not just a high number.':'Within its normal range, so the raw level says less than it appears to.'}
+    Volatility <b>${e.vol.toFixed(0)}%</b>${e.beta!=null?`, beta to Bitcoin <b>${e.beta.toFixed(2)}</b>`:''}.</p>`);}
+  if(S.fng){const zf=z(S.fng.now,S.fng.hist);
+    p.push(`<p>Fear and Greed is <b>${S.fng.now}</b> (${S.fng.label}), <b>${zf>0?'+':''}${zf.toFixed(1)}σ</b> against six months.
+      The indicator is contrarian by design, built to be faded at extremes either way.</p>`);}
+  document.getElementById('brief').innerHTML=p.join('')||'<p class="tiny">Waiting on data.</p>';
+
+  document.getElementById('coins').innerHTML=ASSETS.map(a=>{
+    const c=S.coins[a.sym];
+    if(!c||c.err)return `<div class="coin"><h3>${a.sym}</h3><div class="err">unavailable</div></div>`;
+    const dp=c.price<1?6:c.price<100?2:0,cl=v=>v>=0?'pos':'neg',sg=v=>(v>=0?'+':'')+v.toFixed(1)+'%';
+    return `<div class="coin"><h3><span>${a.sym}</span><span class="tiny">${a.name}</span></h3>
+      <div class="px">$${c.price.toLocaleString(undefined,{minimumFractionDigits:dp,maximumFractionDigits:dp})}</div>
+      <div class="chg"><span class="${cl(c.d7)}">${sg(c.d7)} 7d</span> · <span class="${cl(c.d30)}">${sg(c.d30)} 30d</span></div>
+      ${spark(c.closes.slice(-90))}
+      <div style="margin-top:10px">
+        <div class="row"><span>RSI 14</span><span>${c.rsi.toFixed(0)} · ${c.rsiZ>0?'+':''}${c.rsiZ.toFixed(1)}σ</span></div>
+        <div class="row"><span>vs 200 EMA</span><span>${c.ema200?((c.price/c.ema200-1)*100).toFixed(1)+'%':'—'}</span></div>
+        <div class="row"><span>Volatility</span><span>${c.vol.toFixed(0)}%</span></div>
+        ${c.beta!=null?`<div class="row"><span>Beta to BTC</span><span>${c.beta.toFixed(2)}</span></div>`:''}
+      </div></div>`;}).join('');
+
+  const fg=fragility(),pct=Math.round(fg.score*100),bar=document.getElementById('fragbar');
+  bar.style.width=pct+'%';
+  bar.style.background=fg.score>.66?'var(--warn)':fg.score>.4?'var(--brass)':'var(--teal)';
+  document.getElementById('fraglabel').textContent=fg.score>.66?'Elevated':fg.score>.4?'Moderate':'Low';
+  document.getElementById('fragrows').innerHTML=fg.parts.map(x=>
+    `<div class="row"><span>${x.k}</span><span>${x.v}</span></div>`).join('')||'<div class="tiny">No components available.</div>';
+}
+
+function makeQuestion(){
+  const pool=[],e=S.coins.ETH,real=last('DFII10'),nl=netLiquidity();
+  if(real!=null)pool.push({q:`The 10 year real yield is ${real.toFixed(2)}%. Higher or lower in seven days?`,o:['Higher','Lower','No view']});
+  if(e&&e.rsi>70)pool.push({q:`ETH RSI is ${e.rsi.toFixed(0)}. Will ETH be above or below $${e.price.toFixed(0)} in fourteen days?`,o:['Above','Below','No view']});
+  if(nl)pool.push({q:`Net liquidity is ${nl.chg>0?'rising':'falling'}. Will Bitcoin be higher in fourteen days?`,o:['Yes','No','No view']});
+  if(S.fng)pool.push({q:`Fear and Greed is ${S.fng.now}. Higher or lower in seven days?`,o:['Higher','Lower','No view']});
+  pool.push({q:'Will Bitcoin hold above its 200 day EMA for fourteen days?',o:['Yes','No','No view']});
+  return pool[new Date().getDate()%pool.length];
+}
+async function initJournal(){
+  const q=makeQuestion(),today=new Date().toISOString().slice(0,10);
+  document.getElementById('q').textContent=q.q;
+  let log=await store.get('predictions')||[];
+  const done=log.filter(x=>x.date===today)[0];
+  document.getElementById('qbtns').innerHTML=q.o.map(o=>
+    `<button data-o="${o}" class="${done&&done.answer===o?'sel':''}">${o}</button>`).join('');
+  Array.prototype.forEach.call(document.querySelectorAll('#qbtns button'),b=>{
+    b.onclick=async()=>{
+      log=(await store.get('predictions')||[]).filter(x=>x.date!==today);
+      log.push({date:today,q:q.q,answer:b.dataset.o,outcome:null,
+        snap:{eth:S.coins.ETH&&S.coins.ETH.price,real:last('DFII10')}});
+      await store.set('predictions',log);
+      Array.prototype.forEach.call(document.querySelectorAll('#qbtns button'),x=>x.classList.remove('sel'));
+      b.classList.add('sel');
+      document.getElementById('qnote').textContent='Logged. Score it once the window passes. Being wrong is the useful part.';
+      renderCalib();};});
+  if(done)document.getElementById('qnote').textContent='Logged today. Tap again to change it.';
+  renderCalib();
+}
+async function renderCalib(){
+  const log=await store.get('predictions')||[];
+  const sc=log.filter(x=>x.outcome),r=sc.filter(x=>x.outcome==='right').length;
+  const el=document.getElementById('calib');
+  if(!log.length)el.textContent='Nothing logged yet. Answer today\u2019s question to start.';
+  else if(!sc.length)el.textContent=`${log.length} logged, none scored yet.`;
+  else{const p=Math.round(r/sc.length*100);
+    el.innerHTML=`<b style="font-family:var(--mono)">${r}/${sc.length} correct · ${p}%</b><br>${
+      p>70?'Careful. A high score on few questions usually means they were easy, not that you are calibrated.'
+      :p<40?'Useful. Read back through the wrong ones and find which assumption failed each time.'
+      :'Roughly coin flip, where most people genuinely sit. Seeing it honestly is the point.'}`;}
+  document.getElementById('hist').innerHTML=log.slice(-8).reverse().map(x=>
+    `<div class="hist"><span>${x.date}</span><span>${x.answer}${x.outcome?' · '+x.outcome:' · open'}</span></div>`).join('');
+}
+document.getElementById('resolve').onclick=async()=>{
+  const log=await store.get('predictions')||[],open=log.filter(x=>!x.outcome);
+  if(!open.length){alert('Nothing open to score.');return;}
+  const p=open[0],a=prompt(`${p.date}\n\n${p.q}\n\nYou said: ${p.answer}\n\nType right or wrong:`);
+  if(!a)return;const v=a.trim().toLowerCase();
+  if(v!=='right'&&v!=='wrong'){alert('Type right or wrong.');return;}
+  p.outcome=v;await store.set('predictions',log);renderCalib();};
+
+const st=m=>document.getElementById('status').textContent=m;
+
+/* published backend: one request, everything precomputed */
+function adoptPublished(d){
+  const m=d.macro||{};
+  S.fred={}; Object.keys(m).forEach(k=>{ if(typeof m[k]==='number') S.fred[k]=[m[k]]; });
+  S.published=d;
+  if(d.gold)S.gold={price:d.gold.price,d30:d.gold.chg30_pct,closes:d.gold.spark||[]};
+  if(d.fng)S.fng={now:d.fng.now,label:d.fng.label,hist:d.fng.hist||[d.fng.now]};
+  Object.keys(d.coins||{}).forEach(sym=>{
+    const c=d.coins[sym];
+    S.coins[sym]={sym,name:c.name,price:c.price,rsi:c.rsi,rsiZ:c.rsi_z,
+      ema200:c.ema200,vol:c.vol_pct,d7:c.chg7_pct,d30:c.chg30_pct,
+      beta:c.beta_btc,closes:c.spark||[]};
+  });
+  const dv=d.derivs||{};
+  if(dv.ETH)S.deriv.ETHUSDT={funding:dv.ETH.funding_8h_pct,oi:dv.ETH.open_interest};
+  if(dv.BTC)S.deriv.BTCUSDT={funding:dv.BTC.funding_8h_pct,oi:dv.BTC.open_interest};
+}
+
+function renderAnalogue(){
+  const a=S.published&&S.published.analogue;
+  const el=document.getElementById('analogue');
+  if(!a){el.innerHTML='<div class="tiny">Runs once the backend is publishing data.</div>';return;}
+  const f=a.features||{};
+  el.innerHTML=`
+    <p class="tiny" style="margin:0 0 12px">Today's macro state matched against every day since 2003.
+      Nearest matches: ${a.closest_dates.join(', ')}.</p>
+    <div class="row"><span>Matched days</span><span>${a.n}</span></div>
+    <div class="row"><span>Median gold return, ${a.horizon_days}d</span><span>${a.median_pct>0?'+':''}${a.median_pct}%</span></div>
+    <div class="row"><span>Range, 10th to 90th</span><span>${a.p10_pct}% to ${a.p90_pct>0?'+':''}${a.p90_pct}%</span></div>
+    <div class="row"><span>Positive</span><span>${a.hit_rate_pct}% of the time</span></div>
+    <div class="note tiny">The range matters more than the median. If it spans both directions widely,
+      this setup carries no reliable edge, and that is the useful finding. ${a.n} observations is a
+      small sample: treat it as a rough shape, not a probability.</div>`;
+}
+
+(async function(){
+  let ok=false;
+  if(DATA_URL){
+    st('Loading published data…');
+    try{
+      const d=await jget(DATA_URL+'?t='+Date.now());
+      adoptPublished(d); ok=true;
+      st('Backend data from '+new Date(d.generated).toLocaleString());
+    }catch(e){ st('Backend unreachable, fetching live…'); }
+  }
+  if(!ok){
+    st('Fetching macro…');
+    try{S.fred=await loadFred();}catch(e){st('Macro proxies blocked. Other sources loading.');}
+    render();
+    st('Fetching gold and sentiment…');
+    await Promise.all([loadGold(),loadFNG()]);
+    render();
+    loadDerivs();
+    st('Fetching crypto…');
+    await loadCrypto();
+  }
+  render();
+  renderAnalogue();
+  await initJournal();
+  if(!DATA_URL||!ok) st('Updated '+new Date().toLocaleTimeString());
+})();
+</script>
+</body>
+</html>
