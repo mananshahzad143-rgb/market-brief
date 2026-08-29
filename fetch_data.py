@@ -76,29 +76,54 @@ def beta_to(a: pd.Series, b: pd.Series, window: int = 90) -> float:
 
 # ────────────────────────────── sources ──────────────────────────────
 
+def _treasury(kind: str, year: int) -> pd.DataFrame:
+    """Treasury publishes its own yield curves as CSV, one year at a time."""
+    url = ("https://home.treasury.gov/resource-center/data-chart-center/"
+           "interest-rates/daily-treasury-rates.csv/"
+           f"{year}/all?type={kind}&field_tdr_date_value={year}&page&_format=csv")
+    r = requests.get(url, headers=UA, timeout=30)
+    r.raise_for_status()
+    d = pd.read_csv(io.StringIO(r.text))
+    d["Date"] = pd.to_datetime(d["Date"])
+    return d.set_index("Date").sort_index()
+
+
 def get_fred() -> pd.DataFrame:
-    """Fetch each series separately with retries. Small requests beat one large one."""
-    frames = {}
-    for sid in FRED_IDS:
-        for attempt in range(3):
+    """Real and nominal yields from the Treasury. FRED blocks cloud servers."""
+    this_year = dt.date.today().year
+    real_parts, nom_parts = [], []
+    for year in range(this_year - 4, this_year + 1):
+        for kind, bucket in (("daily_treasury_real_yield_curve", real_parts),
+                             ("daily_treasury_yield_curve", nom_parts)):
             try:
-                url = (f"https://fred.stlouisfed.org/graph/fredgraph.csv"
-                       f"?id={sid}&cosd=2003-01-01")
-                r = requests.get(url, headers=UA, timeout=12)
-                r.raise_for_status()
-                d = pd.read_csv(io.StringIO(r.text))
-                d.columns = ["date", sid]
-                d["date"] = pd.to_datetime(d["date"])
-                frames[sid] = pd.to_numeric(d.set_index("date")[sid], errors="coerce")
-                log(f"  {sid} ok")
-                break
+                bucket.append(_treasury(kind, year))
+                log(f"  treasury {kind[-10:]} {year} ok")
             except Exception as e:
-                if attempt == 2:
-                    log(f"  {sid} failed after 3 tries: {e}")
-                time.sleep(1)
-    if not frames:
-        raise RuntimeError("no FRED series retrieved")
-    return pd.DataFrame(frames)
+                log(f"  treasury {kind[-10:]} {year} failed: {e}")
+            time.sleep(0.5)
+
+    if not real_parts and not nom_parts:
+        raise RuntimeError("no Treasury data retrieved")
+
+    out = {}
+    if real_parts:
+        real = pd.concat(real_parts)
+        col = [c for c in real.columns if "10" in c]
+        if col:
+            out["DFII10"] = pd.to_numeric(real[col[0]], errors="coerce")
+    if nom_parts:
+        nom = pd.concat(nom_parts)
+        for label, want in (("DGS10", "10 Yr"), ("DGS2", "2 Yr")):
+            hit = [c for c in nom.columns if c.strip() == want]
+            if hit:
+                out[label] = pd.to_numeric(nom[hit[0]], errors="coerce")
+
+    df = pd.DataFrame(out).sort_index()
+    if "DGS10" in df and "DFII10" in df:
+        df["T10YIE"] = df["DGS10"] - df["DFII10"]      # breakeven inflation
+    if "DGS10" in df and "DGS2" in df:
+        df["T10Y2Y"] = df["DGS10"] - df["DGS2"]        # the curve
+    return df
 
 
 def get_gold() -> pd.Series:
