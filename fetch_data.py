@@ -84,7 +84,7 @@ def get_fred() -> pd.DataFrame:
             try:
                 url = (f"https://fred.stlouisfed.org/graph/fredgraph.csv"
                        f"?id={sid}&cosd=2003-01-01")
-                r = requests.get(url, headers=UA, timeout=45)
+                r = requests.get(url, headers=UA, timeout=12)
                 r.raise_for_status()
                 d = pd.read_csv(io.StringIO(r.text))
                 d.columns = ["date", sid]
@@ -95,7 +95,7 @@ def get_fred() -> pd.DataFrame:
             except Exception as e:
                 if attempt == 2:
                     log(f"  {sid} failed after 3 tries: {e}")
-                time.sleep(3)
+                time.sleep(1)
     if not frames:
         raise RuntimeError("no FRED series retrieved")
     return pd.DataFrame(frames)
