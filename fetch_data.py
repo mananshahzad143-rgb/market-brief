@@ -77,18 +77,28 @@ def beta_to(a: pd.Series, b: pd.Series, window: int = 90) -> float:
 # ────────────────────────────── sources ──────────────────────────────
 
 def get_fred() -> pd.DataFrame:
-    """One batched CSV request for every series."""
-    url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=" + ",".join(FRED_IDS)
-    r = requests.get(url, headers=UA, timeout=60)
-    r.raise_for_status()
-    df = pd.read_csv(io.StringIO(r.text))
-    df.columns = [c.strip() for c in df.columns]
-    df = df.rename(columns={df.columns[0]: "date"})
-    df["date"] = pd.to_datetime(df["date"])
-    df = df.set_index("date")
-    for c in df.columns:
-        df[c] = pd.to_numeric(df[c], errors="coerce")
-    return df
+    """Fetch each series separately with retries. Small requests beat one large one."""
+    frames = {}
+    for sid in FRED_IDS:
+        for attempt in range(3):
+            try:
+                url = (f"https://fred.stlouisfed.org/graph/fredgraph.csv"
+                       f"?id={sid}&cosd=2003-01-01")
+                r = requests.get(url, headers=UA, timeout=45)
+                r.raise_for_status()
+                d = pd.read_csv(io.StringIO(r.text))
+                d.columns = ["date", sid]
+                d["date"] = pd.to_datetime(d["date"])
+                frames[sid] = pd.to_numeric(d.set_index("date")[sid], errors="coerce")
+                log(f"  {sid} ok")
+                break
+            except Exception as e:
+                if attempt == 2:
+                    log(f"  {sid} failed after 3 tries: {e}")
+                time.sleep(3)
+    if not frames:
+        raise RuntimeError("no FRED series retrieved")
+    return pd.DataFrame(frames)
 
 
 def get_gold() -> pd.Series:
