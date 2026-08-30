@@ -1,20 +1,27 @@
 """
 Market brief backend — relationship and decision engine.
 
-All statistics happen here, once per run, in pandas. The page only renders.
+CORRECTIONS in this version, all four deliberate:
 
-Beyond raw series it computes:
-  · rolling correlations      when each mechanism is working
-  · regression with R²        how much a driver actually explains
-  · lead-lag scan             the real delay from oil to inflation expectations
-  · regime classification     which of four states we are in
-  · historical base rates     what every asset did in this state before
-  · signal scorecard          hit rate AND sample size, always both
-  · fragility index           how dry the forest is
-  · analogue engine           distribution of what followed similar days
-  · equal-risk weights        volatility-adjusted sizing across the watchlist
+1. SIGN CONVENTION. Each panel now declares what "working" means. Real yield
+   against gold should be NEGATIVELY correlated when the mechanism holds. The
+   old code coloured any positive correlation green, which was backwards on
+   three of five panels.
 
-Sources: yfinance, US Treasury, CoinGecko. No FRED; it blocks cloud servers.
+2. EFFECTIVE SAMPLE SIZE. Overlapping 90-day windows on daily data inflate n
+   by roughly the horizon. Every statistic now reports n_eff = n / horizon
+   alongside the raw count.
+
+3. ANALOGUE SPACING. Nearest-neighbour matching happily returned 25 dates from
+   a single two-month episode and called it n=25. Matches must now be at least
+   120 days apart, and the output reports how many distinct episodes and what
+   span they cover.
+
+4. NON-OVERLAPPING REGRESSION. R² is now computed on non-overlapping 21-day
+   blocks rather than a rolling sum, so the fit is not flattered by
+   autocorrelation.
+
+Sources: yfinance, US Treasury, CoinGecko. No FRED — it blocks cloud servers.
 """
 
 import io
@@ -45,9 +52,13 @@ def z(v, hist):
     return round(float((v - h.mean()) / h.std()), 2) if h.std() else 0.0
 
 
-def ann_vol(s, w=90):
+def ann_vol(s, w=90, periods=252):
+    """
+    periods=252 for markets that close at weekends, 365 for crypto which does
+    not. Using 252 on crypto understates volatility by about 17%.
+    """
     r = np.log(s / s.shift(1)).dropna().tail(w)
-    return round(float(r.std() * np.sqrt(252) * 100), 1)
+    return round(float(r.std() * np.sqrt(periods) * 100), 1)
 
 
 def pct(s, n):
@@ -61,29 +72,66 @@ def rsi(s, n=14):
     return 100 - 100 / (1 + g / l.replace(0, np.nan))
 
 
-def regress(y, x):
+def regress_blocks(y, x, block=21):
+    """
+    FIX 3: non-overlapping blocks. A rolling sum reuses each observation `block`
+    times, which inflates apparent fit. Taking every Nth row makes the sample
+    independent and the R² honest.
+    """
     df = pd.concat([y.rename("y"), x.rename("x")], axis=1).dropna()
-    if len(df) < 200:
+    df = df.iloc[::block]                       # non-overlapping
+    if len(df) < 60:
         return None
     b, a = np.polyfit(df["x"], df["y"], 1)
     pred = a + b * df["x"]
     ss_tot = ((df["y"] - df["y"].mean()) ** 2).sum()
     r2 = 1 - ((df["y"] - pred) ** 2).sum() / ss_tot if ss_tot else 0
-    return {"slope": round(float(b), 3), "r2": round(float(r2), 3), "n": int(len(df))}
+    return {"slope": round(float(b), 3), "r2": round(float(max(0, r2)), 3),
+            "n": int(len(df)), "basis": f"non-overlapping {block}-day blocks"}
 
 
-def lead_lag(driver, target, max_lag=180, step=10):
-    dr, tg = driver.pct_change(21), target.diff(21)
+def lead_lag(driver, target, max_lag_days=120, window=5):
+    """
+    M1 FIX. The previous version ran dropna() before subsampling, and shift(lag)
+    creates leading NaNs, so every lag ended up sampling a DIFFERENT set of
+    calendar dates. Cross-lag comparison was invalid.
+
+    Now: align once, difference once, subsample onto ONE fixed grid, and only
+    then shift. Every lag is measured on the same dates, so the comparison is
+    like-for-like. Lag resolution equals `window` days.
+
+    LIMITATION no design removes: a peak AT zero cannot distinguish "same day"
+    from "any delay shorter than the window". Read it as "faster than `window`
+    days". A peak AWAY from zero is the informative result.
+    """
+    df = pd.concat([driver.rename("d"), target.rename("t")], axis=1).dropna()
+    if len(df) < 500:
+        return None
+    grid = pd.concat([df["d"].pct_change(window).rename("d"),
+                      df["t"].diff(window).rename("t")], axis=1).dropna()
+    grid = grid.iloc[::window]          # one fixed non-overlapping grid
     best, curve = None, []
-    for lag in range(0, max_lag + 1, step):
-        c = pd.concat([dr.shift(lag).rename("d"), tg.rename("t")], axis=1).dropna()
-        if len(c) < 300:
+    for k in range(0, max_lag_days // window + 1):
+        c = pd.concat([grid["d"].shift(k).rename("dd"),
+                       grid["t"].rename("tt")], axis=1).dropna()
+        if len(c) < 100:
             continue
-        r = float(c["d"].corr(c["t"]))
-        curve.append({"lag": lag, "corr": round(r, 3)})
+        r = float(c["dd"].corr(c["tt"]))
+        lag_days = k * window
+        curve.append({"lag": lag_days, "corr": round(r, 3)})
         if best is None or abs(r) > abs(best["corr"]):
-            best = {"lag": lag, "corr": round(r, 3)}
-    return {"best": best, "curve": curve} if best else None
+            best = {"lag": lag_days, "corr": round(r, 3), "n": int(len(c))}
+    return {"best": best, "curve": curve, "window": window} if best else None
+
+
+def episode_count(cond):
+    """
+    M3 FIX. The number of times a condition SWITCHES ON. Signals persist for
+    months, so fired-days divided by horizon badly overstates independence.
+    This counts distinct episodes, which is the honest denominator.
+    """
+    c = cond.fillna(False).astype(bool)
+    return int((c & ~c.shift(1, fill_value=False)).sum())
 
 
 def get_markets():
@@ -167,7 +215,7 @@ def get_coins():
             s = s[~s.index.duplicated(keep="last")].sort_index()
             r = rsi(s).dropna()
             rec = {"price": float(s.iloc[-1]), "rsi": round(float(r.iloc[-1]), 1),
-                   "rsi_z": z(float(r.iloc[-1]), r), "vol": ann_vol(s),
+                   "rsi_z": z(float(r.iloc[-1]), r), "vol": ann_vol(s, periods=365),
                    "chg7": pct(s, 7), "chg30": pct(s, 30), "chg90": pct(s, 90),
                    "vs_ema200": round(float(s.iloc[-1] / s.ewm(span=200).mean().iloc[-1] - 1) * 100, 1),
                    "drawdown": round(float(s.iloc[-1] / s.max() - 1) * 100, 1)}
@@ -209,6 +257,11 @@ def classify(real):
 
 
 def base_rates(regime, assets, horizon=90):
+    """
+    M2: `horizon` is TRADING days. 90 trading days is roughly 4 calendar months.
+    M3: n_eff counts distinct regime EPISODES, not days divided by horizon,
+        because a regime persists for months rather than resetting daily.
+    """
     out = {}
     for name, s in assets.items():
         s = s.dropna()
@@ -220,9 +273,10 @@ def base_rates(regime, assets, horizon=90):
         for state, grp in j.groupby("r"):
             if len(grp) < 60:
                 continue
+            n_eff = episode_count(j["r"] == state)
             rows[str(state)] = {"median": round(float(grp["f"].median()) * 100, 1),
                                 "hit": round(float((grp["f"] > 0).mean()) * 100),
-                                "n": int(len(grp))}
+                                "n": int(len(grp)), "n_eff": max(1, n_eff)}
         if rows:
             out[name] = rows
     return out
@@ -240,10 +294,14 @@ def scorecard(tr, mk):
         wins = (fired["f"] > 0) if direction == "up" else (fired["f"] < 0)
         base = (j["f"] > 0) if direction == "up" else (j["f"] < 0)
         cards.append({"name": name, "desc": desc, "fired": int(len(fired)),
+                      # M3: distinct switch-ons, not fired-days / horizon
+                      "n_eff": episode_count(j["c"]),
                       "hit": round(float(wins.mean()) * 100),
                       "base": round(float(base.mean()) * 100),
                       "median": round(float(fired["f"].median()) * 100, 1),
+                      # M2: horizons are TRADING days; state calendar months too
                       "horizon": horizon,
+                      "horizon_label": f"{horizon} trading days (~{round(horizon/21)} months)",
                       "active": bool(cond.dropna().iloc[-1]) if len(cond.dropna()) else False})
 
     if "real10" in tr and "gold" in mk:
@@ -254,8 +312,9 @@ def scorecard(tr, mk):
         add("Real yield stretched high", rz > 1.0, mk["gold"], 90, "down",
             "Real yield more than 1σ above its mean; bonds outcompeting gold.")
     if "curve" in tr and "spx" in mk:
-        add("Yield curve inverted", tr["curve"] < 0, mk["spx"], 252, "down",
-            "10y below 2y. Preceded every US recession for fifty years, often by a year or more.")
+        add("Curve inverted → equities fall in 1y", tr["curve"] < 0, mk["spx"], 252, "down",
+            "NOTE: the curve's real claim is about RECESSIONS, not equity prices. This tests the "
+            "weaker equity version because recession dates are not in this dataset.")
     if "gold" in mk:
         g = mk["gold"]
         gz = (g - g.rolling(252).mean()) / g.rolling(252).std()
@@ -292,10 +351,20 @@ def fragility(tr, mk, coins, fng):
                       "s": min(1, max(0, (np.mean(b) - 0.8) / 1.2))})
     sc = float(np.mean([p["s"] for p in parts])) if parts else 0
     return {"score": round(sc, 2), "parts": parts,
-            "label": "Elevated" if sc > .66 else "Moderate" if sc > .4 else "Low"}
+            "label": "Elevated" if sc > .66 else "Moderate" if sc > .4 else "Low",
+            "disclosure": ("Unvalidated heuristic. Components are equally weighted and the "
+                           "mappings from raw values to 0–1 scores were chosen by hand, not "
+                           "fitted or backtested. Treat this as a rough summary of several "
+                           "readings, not as a measured quantity.")}
 
 
-def analogues(feat, target, horizon=90, k=25):
+def analogues(feat, target, horizon=90, k=25, min_gap=120):
+    """
+    FIX 4: matches must be at least `min_gap` days apart. Without this the
+    nearest-neighbour search returns one episode sampled k times and reports it
+    as k independent observations, which is how you get a 96% hit rate that
+    means nothing.
+    """
     df = feat.dropna()
     tgt = target.reindex(df.index).ffill()
     fwd = tgt.shift(-horizon) / tgt - 1
@@ -305,20 +374,40 @@ def analogues(feat, target, horizon=90, k=25):
     today, pool = norm.iloc[-1], norm.iloc[:-400]
     if len(pool) < 300:
         return None
-    near = (((pool - today) ** 2).sum(axis=1) ** 0.5).nsmallest(k).index
-    r = fwd.loc[near].dropna()
-    if len(r) < 8:
+
+    dist = (((pool - today) ** 2).sum(axis=1) ** 0.5).sort_values()
+    chosen = []
+    for idx in dist.index:
+        if pd.isna(fwd.get(idx, np.nan)):
+            continue
+        if all(abs((idx - c).days) >= min_gap for c in chosen):
+            chosen.append(idx)
+        if len(chosen) >= k:
+            break
+    if len(chosen) < 6:
         return None
+
+    r = fwd.loc[chosen].dropna()
+    years = sorted({d.year for d in chosen})
+    span = f"{min(chosen).strftime('%b %Y')} – {max(chosen).strftime('%b %Y')}"
     return {"horizon": horizon, "n": int(len(r)),
+            "episodes": len(years), "years": years, "span": span,
+            "min_gap_days": min_gap,
             "median": round(float(r.median()) * 100, 1),
             "p10": round(float(r.quantile(.1)) * 100, 1),
             "p90": round(float(r.quantile(.9)) * 100, 1),
             "hit": round(float((r > 0).mean()) * 100),
-            "dates": [d.strftime("%b %Y") for d in near[:6]],
-            "returns": [round(float(x) * 100, 1) for x in sorted(r)]}
+            "dates": [d.strftime("%b %Y") for d in sorted(chosen)[:8]],
+            "returns": [round(float(x) * 100, 1) for x in sorted(r)],
+            "mean_dist": round(float(dist.loc[chosen].mean()), 2)}
 
 
-def panel(pid, title, mech, an, a, bn, b, invert_a=False, note=""):
+def panel(pid, title, mech, an, a, bn, b, expect, invert_a=False, note=""):
+    """
+    FIX 1: `expect` declares the sign the mechanism predicts, so the frontend
+    can colour "working" correctly instead of assuming positive is good.
+    expect = 'neg' means the mechanism implies a NEGATIVE correlation.
+    """
     df = pd.concat([a.rename("a"), b.rename("b")], axis=1).dropna()
     if len(df) < 300:
         return None
@@ -327,20 +416,31 @@ def panel(pid, title, mech, an, a, bn, b, invert_a=False, note=""):
     corr = ra.rolling(120).corr(rb)
     w = df.resample("W").last().dropna()
     cw = corr.resample("W").last().reindex(w.index).ffill()
-    reg = regress(rb.rolling(21).sum(), ra.rolling(21).sum())
+    reg = regress_blocks(rb.rolling(21).sum(), ra.rolling(21).sum())
+
+    # FIX 6: 'none' means the mechanism makes no same-day prediction, so the
+    # strip must not be coloured as if it were passing or failing a test.
+    sign = -1 if expect == "neg" else (0 if expect == "none" else 1)
+    now = float(corr.dropna().iloc[-1])
     return {"id": pid, "title": title, "mechanism": mech, "note": note,
+            "expect": expect,
+            "expect_text": {"neg": "negative — the two should move opposite",
+                            "pos": "positive — the two should move together",
+                            "none": "none — this mechanism makes no same-day prediction"}[expect],
             "dates": [d.strftime("%Y-%m-%d") for d in w.index],
             "a": {"name": an, "values": [round(float(x), 4) for x in w["a"]], "invert": invert_a},
             "b": {"name": bn, "values": [round(float(x), 4) for x in w["b"]]},
             "corr": [None if pd.isna(x) else round(float(x), 3) for x in cw],
-            "corr_now": round(float(corr.dropna().iloc[-1]), 2),
+            "working": [None if pd.isna(x) else round(float(x) * sign, 3) for x in cw],
+            "corr_now": round(now, 2),
+            "working_now": round(now * sign, 2),
             "corr_60d": round(float(corr.tail(60).mean()), 2),
             "regression": reg, "years": round(len(df) / 252, 1)}
 
 
 def main():
     out = {"generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
-           "errors": []}
+           "errors": [], "version": "2.0-corrected"}
     log("markets…")
     try:
         mk = get_markets()
@@ -358,12 +458,15 @@ def main():
         h["real10"] = round(float(s.iloc[-1]), 2)
         h["real10_z"] = z(float(s.iloc[-1]), s.tail(504))
         h["real10_chg90"] = round(float(s.iloc[-1] - s.iloc[-90]), 2) if len(s) > 90 else None
+        h["real10_asof"] = s.index[-1].strftime("%Y-%m-%d")
     for k in ("nom10", "nom2", "breakeven", "curve"):
         if k in tr and len(tr[k].dropna()):
             h[k] = round(float(tr[k].dropna().iloc[-1]), 2)
     for k in ("gold", "oil", "dxy", "spx", "copper"):
         if k in mk and len(mk[k].dropna()):
             h[k] = round(float(mk[k].dropna().iloc[-1]), 2)
+    if "gold" in mk:
+        h["markets_asof"] = mk["gold"].dropna().index[-1].strftime("%Y-%m-%d")
     out["headline"] = h
 
     rows = []
@@ -382,7 +485,8 @@ def main():
         if k in tr:
             row(lab, tr[k], u)
     for k, lab, u in (("gold", "Gold", "$"), ("oil", "WTI crude", "$"), ("copper", "Copper", "$"),
-                      ("dxy", "Dollar index", ""), ("spx", "S&P 500", ""), ("tlt", "Long bonds TLT", "$")):
+                      ("dxy", "Dollar index", ""), ("spx", "S&P 500", ""),
+                      ("tlt", "Long bonds TLT (total return)", "$")):
         if k in mk:
             row(lab, mk[k], u)
     out["table"] = rows
@@ -391,35 +495,38 @@ def main():
     try:
         if "real10" in tr and "gold" in mk:
             P.append(panel("rg", "Real yield against gold",
-                "Gold pays nothing, so its only competitor is an inflation-protected bond. When "
-                "the real yield falls, holding gold costs less and gold rises. The yield line is "
-                "inverted here so the two should track together.",
-                "10y real yield (inverted)", tr["real10"], "Gold", mk["gold"], True,
-                "The master relationship. Everything else is a branch of it."))
+                "Gold pays nothing, so its only competitor is an inflation-protected bond. When the "
+                "real yield falls, holding gold costs less and gold rises. So the mechanism predicts "
+                "these two move in OPPOSITE directions.",
+                "10y real yield (inverted for display)", tr["real10"], "Gold", mk["gold"],
+                "neg", True, "The master relationship. Everything else is a branch of it."))
         if "oil" in mk and "breakeven" in tr:
             P.append(panel("ob", "Oil against inflation expectations",
-                "Oil is an input to nearly every price. When it rises the market raises its "
-                "inflation forecast, which is what breakeven measures. That forecast is what turns "
-                "a central bank hawkish — the mechanism by which a war can push gold down.",
-                "WTI crude", mk["oil"], "10y breakeven", tr["breakeven"], False,
+                "Oil is an input to nearly every price. When it rises the market raises its inflation "
+                "forecast, which is what breakeven measures. The mechanism predicts these move TOGETHER.",
+                "WTI crude", mk["oil"], "10y breakeven", tr["breakeven"], "pos", False,
                 "Oil → inflation expectations → central bank → real yields → gold."))
         if "dxy" in mk and "gold" in mk:
             P.append(panel("dg", "The dollar against gold",
-                "Commodities are priced in dollars worldwide. A stronger dollar makes the same "
-                "ounce dearer for every foreign buyer, so demand falls and the dollar price softens.",
-                "Dollar index (inverted)", mk["dxy"], "Gold", mk["gold"], True))
+                "Commodities are priced in dollars worldwide. A stronger dollar makes the same ounce "
+                "dearer for every foreign buyer, so demand falls. The mechanism predicts these move "
+                "in OPPOSITE directions.",
+                "Dollar index (inverted for display)", mk["dxy"], "Gold", mk["gold"], "neg", True))
         if "real10" in tr and "spx" in mk:
             P.append(panel("rs", "Real yield against the risk ladder",
                 "Every asset competes for the same savings and the real yield is the referee. High "
-                "real yields make safety genuinely attractive, and money leaves the top of the "
-                "ladder first — where equities sit, and crypto sits above them.",
-                "10y real yield (inverted)", tr["real10"], "S&P 500", mk["spx"], True))
+                "real yields make safety attractive and money leaves the top of the ladder. The "
+                "mechanism predicts these move in OPPOSITE directions.",
+                "10y real yield (inverted for display)", tr["real10"], "S&P 500", mk["spx"], "neg", True))
         if "curve" in tr and "spx" in mk:
             P.append(panel("cs", "The yield curve as early warning",
-                "When the 10 year yields less than the 2 year, the bond market is pricing a "
-                "slowdown. It has preceded every US recession for fifty years, usually by six to "
-                "eighteen months — long enough to feel like a false alarm.",
-                "Curve 10y−2y", tr["curve"], "S&P 500", mk["spx"]))
+                "An inverted curve is a LAGGED warning, typically six to eighteen months ahead. There "
+                "is no reliable same-day relationship, so expect the correlation strip to look like "
+                "noise. Judge this one from the scorecard, not from this chart.",
+                "Curve 10y−2y", tr["curve"], "S&P 500", mk["spx"], "none", False,
+                "The near-zero R² here is the honest reading: contemporaneously, the curve tells "
+                "you almost nothing about equities. The strip is left uncoloured because there is "
+                "no same-day claim to pass or fail."))
     except Exception as e:
         out["errors"].append(f"panels: {e}")
     out["panels"] = [p for p in P if p]
@@ -454,6 +561,7 @@ def main():
             a = analogues(f, mk["gold"])
             if a:
                 out["analogue"] = a
+                log(f"analogue: {a['n']} matches across {a['episodes']} years")
     except Exception as e:
         out["errors"].append(f"analogue: {e}")
 

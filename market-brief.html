@@ -4,32 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0A0E13">
 <title>THE MACHINE · Terminal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#0A0E13; --surface:#131920; --raised:#182029; --line:#1F2833; --line2:#2A3644;
-  --text:#EAEEF2; --dim:#8A9AAA; --faint:#5A6875;
-  --accent:#F0B90B;           /* signature amber — also semantically gold */
-  --up:#0ECB81; --down:#F6465D; --info:#2EBFD9;
-  --mono:'Roboto Mono',ui-monospace,monospace;
-  --sans:'Inter',system-ui,-apple-system,sans-serif;
-}
+:root{--bg:#0A0E13;--surface:#131920;--raised:#182029;--line:#1F2833;--line2:#2A3644;
+  --text:#EAEEF2;--dim:#8A9AAA;--faint:#5A6875;--accent:#F0B90B;
+  --up:#0ECB81;--down:#F6465D;--info:#2EBFD9;
+  --mono:'Roboto Mono',ui-monospace,monospace;--sans:'Inter',system-ui,sans-serif;}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
   font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
   padding-bottom:calc(60px + env(safe-area-inset-bottom))}
-.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
-
-/* ── header + ticker tape ── */
 header{position:sticky;top:0;z-index:20;background:rgba(10,14,19,.94);
   backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-.bar{max-width:1080px;margin:0 auto;padding:12px 16px;display:flex;
-  align-items:center;gap:12px;flex-wrap:wrap}
+.bar{max-width:1080px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .logo{font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.14em}
 .logo span{color:var(--accent)}
 .live{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--faint);
@@ -39,102 +30,78 @@ header{position:sticky;top:0;z-index:20;background:rgba(10,14,19,.94);
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .tape{border-top:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
 .tape::-webkit-scrollbar{display:none}
-.tape-in{max-width:1080px;margin:0 auto;display:flex;gap:0;padding:0 16px}
-.tick{padding:9px 18px 9px 0;margin-right:18px;border-right:1px solid var(--line);
-  white-space:nowrap;flex:none}
+.tape-in{max-width:1080px;margin:0 auto;display:flex;padding:0 16px}
+.tick{padding:9px 18px 9px 0;margin-right:18px;border-right:1px solid var(--line);white-space:nowrap;flex:none}
 .tick:last-child{border-right:none}
-.tick .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--faint);
-  text-transform:uppercase}
-.tick .v{font-family:var(--mono);font-size:14px;font-weight:500;margin-top:2px;
-  font-variant-numeric:tabular-nums}
-
+.tick .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase}
+.tick .v{font-family:var(--mono);font-size:14px;font-weight:500;margin-top:2px;font-variant-numeric:tabular-nums}
 .wrap{max-width:1080px;margin:0 auto;padding:0 16px}
 h2{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--faint);font-weight:500;margin:30px 0 12px;display:flex;align-items:center;gap:10px}
 h2::after{content:'';flex:1;height:1px;background:var(--line)}
-h3{font-family:var(--sans);font-size:16px;font-weight:600;margin:0 0 5px;letter-spacing:-.01em}
-
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;
-  padding:18px;margin-bottom:12px}
+h3{font-size:16px;font-weight:600;margin:0 0 5px;letter-spacing:-.01em}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:12px}
 .mech{font-size:13px;color:var(--dim);line-height:1.6;margin:0 0 16px}
 .tiny{font-size:11.5px;color:var(--faint);line-height:1.55}
 .note{border-left:2px solid var(--accent);padding-left:12px;margin-top:14px;
   font-size:11.5px;color:var(--dim);line-height:1.55}
-
-/* ── hero ── */
+.warn{border-left:2px solid var(--down);padding-left:12px;margin-top:14px;
+  font-size:11.5px;color:var(--dim);line-height:1.55}
 .hero{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);
   border-radius:8px;overflow:hidden;grid-template-columns:1fr;margin-top:16px}
 @media(min-width:640px){.hero{grid-template-columns:repeat(3,1fr)}}
 .cellx{background:var(--surface);padding:18px}
-.cellx .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--faint);
-  text-transform:uppercase}
-.cellx .v{font-family:var(--mono);font-size:34px;font-weight:500;line-height:1.1;margin-top:8px;
-  font-variant-numeric:tabular-nums}
+.cellx .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase}
+.cellx .v{font-family:var(--mono);font-size:34px;font-weight:500;line-height:1.1;margin-top:8px;font-variant-numeric:tabular-nums}
 .cellx .s{font-size:11.5px;color:var(--dim);margin-top:4px}
-
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .chip{font-family:var(--mono);font-size:10.5px;padding:5px 10px;border-radius:4px;
-  background:var(--raised);border:1px solid var(--line2);white-space:nowrap;letter-spacing:.02em}
+  background:var(--raised);border:1px solid var(--line2);white-space:nowrap}
 .chip.up{color:var(--accent);border-color:rgba(240,185,11,.35)}
 .chip.dn{color:var(--info);border-color:rgba(46,191,217,.3)}
-
-/* ── tables ── */
 table{width:100%;border-collapse:collapse;font-size:12.5px}
 th{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--faint);font-weight:500;text-align:right;padding:0 0 9px;
-  border-bottom:1px solid var(--line2)}
+  color:var(--faint);font-weight:500;text-align:right;padding:0 0 9px;border-bottom:1px solid var(--line2)}
 th:first-child{text-align:left}
 td{padding:10px 0;border-bottom:1px solid var(--line);text-align:right;
   font-family:var(--mono);font-variant-numeric:tabular-nums}
 td:first-child{text-align:left;font-family:var(--sans)}
 tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:rgba(255,255,255,.02)}
 .up{color:var(--up)}.down{color:var(--down)}.amb{color:var(--accent)}
-
-.legend{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;
-  color:var(--dim);margin-bottom:10px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-bottom:10px}
 .key{display:inline-flex;align-items:center;gap:7px}
 .key i{width:16px;height:2px;border-radius:2px;display:inline-block}
 .foot{font-family:var(--mono);font-size:11px;padding-top:12px;margin-top:14px;
   border-top:1px solid var(--line);display:flex;justify-content:space-between;
   gap:16px;flex-wrap:wrap;color:var(--dim)}
-
 .coins{display:grid;gap:10px;grid-template-columns:repeat(2,1fr)}
 @media(min-width:700px){.coins{grid-template-columns:repeat(4,1fr)}}
 .coin{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px}
-.coin .sym{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.06em}
-.coin .px{font-family:var(--mono);font-size:19px;font-weight:500;margin:6px 0 2px;
-  font-variant-numeric:tabular-nums}
-.kv{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;
-  padding:4px 0;color:var(--dim)}
+.sym{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.06em}
+.px{font-family:var(--mono);font-size:19px;font-weight:500;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.kv{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;padding:4px 0;color:var(--dim)}
 .kv b{color:var(--text);font-weight:500}
-
 .hist{display:flex;align-items:flex-end;gap:2px;height:78px;margin:12px 0 4px}
 .hist i{flex:1;border-radius:2px 2px 0 0;min-height:2px;background:var(--info)}
 .meter{height:6px;background:var(--line2);border-radius:3px;overflow:hidden;margin:12px 0 8px}
-.meter i{display:block;height:100%;border-radius:3px;transition:width .4s}
+.meter i{display:block;height:100%;border-radius:3px}
 svg{display:block;width:100%;overflow:visible}
 .err{color:var(--down);font-family:var(--mono);font-size:11.5px}
-.pill{display:inline-block;padding:2px 7px;border-radius:3px;font-family:var(--mono);
-  font-size:10px;letter-spacing:.05em}
+.pill{display:inline-block;padding:2px 7px;border-radius:3px;font-family:var(--mono);font-size:10px}
 </style>
 </head>
 <body>
-
 <header>
-  <div class="bar">
-    <div class="logo">THE<span>·</span>MACHINE</div>
-    <div class="live"><span class="dot"></span><span id="status">CONNECTING</span></div>
-  </div>
+  <div class="bar"><div class="logo">THE<span>·</span>MACHINE</div>
+    <div class="live"><span class="dot"></span><span id="status">CONNECTING</span></div></div>
   <div class="tape"><div class="tape-in" id="tape"></div></div>
 </header>
-
 <div class="wrap">
-
   <div class="hero" id="hero"></div>
   <div class="panel" style="margin-top:12px">
     <div id="regime" class="mech" style="margin:0"></div>
     <div class="chips" id="chips"></div>
+    <div class="tiny" id="asof" style="margin-top:12px"></div>
   </div>
 
   <h2>Regime base rates</h2>
@@ -164,16 +131,15 @@ svg{display:block;width:100%;overflow:visible}
   <div class="coins" id="coins"></div>
   <div class="panel tiny" style="margin-top:10px" id="fng"></div>
 
-  <div class="note" style="margin:32px 0 0;border-left-color:var(--down)">
-    Every figure describes how something <em>has</em> behaved. Nothing here forecasts. The
-    correlation strips and sample sizes exist to show when a mechanism stopped working, because
-    that is when trusting it costs most. Crypto rests on roughly one and a half cycles; the macro
-    series have twenty years. Do not let confidence earned on one leak into the other.
+  <div class="warn" style="margin:32px 0 0">
+    Every figure describes how something <em>has</em> behaved. Nothing forecasts. Where a statistic
+    uses overlapping windows, the effective sample is shown beside the raw count — trust the smaller
+    number. Crypto rests on roughly one and a half cycles; the macro series have twenty years.
   </div>
 </div>
 
 <script>
-const DATA_URL = "https://raw.githubusercontent.com/mananshahzad143-rgb/market-brief/refs/heads/main/data.json";   /* ← paste your raw data.json URL between these quotes */
+const DATA_URL = "";   /* ← paste your raw data.json URL between these quotes */
 
 const $=id=>document.getElementById(id);
 const st=m=>$('status').textContent=m;
@@ -204,11 +170,16 @@ function chart(p,eps){
     <polyline points="${path(B)}" fill="none" stroke="#F0B90B" stroke-width="1.7"/>${ticks}</svg>`;
 }
 
-function corrStrip(p){
-  const W=780,H=48,n=p.corr.length;let b='';
-  p.corr.forEach((c,i)=>{if(c==null)return;
+/* FIX 1: colour by "working", not by raw sign. The backend supplies a signed
+   series where positive always means the mechanism is holding. */
+function workStrip(p){
+  const none=p.expect==='none';
+  const W=780,H=48,arr=none?p.corr:(p.working||p.corr),n=arr.length;let b='';
+  arr.forEach((c,i)=>{if(c==null)return;
     const x=(i/n)*W,w=Math.max(W/n,.9),h=Math.abs(c)*(H/2),y=c>0?H/2-h:H/2;
-    b+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c>0?'#0ECB81':'#F6465D'}" opacity=".8"/>`;});
+    /* no expected sign means no pass/fail, so render neutral grey */
+    const fill=none?'#5A6875':(c>0?'#0ECB81':'#F6465D');
+    b+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" opacity=".8"/>`;});
   return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:48px;margin-top:8px">${b}
     <line x1="0" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="#2A3644"/></svg>`;
 }
@@ -222,19 +193,17 @@ function spark(v){
 }
 
 const REGIME={
- "Low and falling":"Real yields low and still dropping. The cost of holding a non-yielding asset is falling. Historically the most supportive state for gold and for everything at the top of the risk ladder.",
+ "Low and falling":"Real yields low and still dropping. The cost of holding a non-yielding asset is falling. Historically the most supportive state for gold and for the top of the risk ladder.",
  "Low and rising":"Real yields low but climbing. The tailwind is fading. This is the state in which trends quietly reverse before anyone notices.",
  "High and falling":"Real yields high but easing. Safety still pays well, though less than it did. Risk assets usually begin recovering here.",
- "High and rising":"Real yields high and climbing. Patience is being paid handsomely. The hardest state for anything that yields nothing."};
+ "High and rising":"Real yields high and climbing. Patience is being paid handsomely. On the mechanism, the hardest state for anything that yields nothing."};
 
 function render(d){
   const h=d.headline||{},reg=(d.regime&&d.regime.now)||null;
-  st('LIVE · '+new Date(d.generated).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+
+  st('LIVE · '+new Date(d.generated).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+
      (d.errors&&d.errors.length?` · ${d.errors.length} WARN`:''));
 
-  // ticker tape
-  const tape=[];
-  const push=(k,v,c)=>tape.push(`<div class="tick"><div class="k">${k}</div>
+  const tape=[];const push=(k,v,c)=>tape.push(`<div class="tick"><div class="k">${k}</div>
     <div class="v"${c?` style="color:${c}"`:''}>${v}</div></div>`);
   if(h.real10!=null)push('REAL 10Y',(h.real10>0?'+':'')+f(h.real10)+'%',h.real10<1?'#0ECB81':'#F0B90B');
   if(h.gold!=null)push('GOLD','$'+f(h.gold,0),'#F0B90B');
@@ -249,7 +218,6 @@ function render(d){
     c.chg30>0?'#0ECB81':'#F6465D'));
   $('tape').innerHTML=tape.join('');
 
-  // hero
   $('hero').innerHTML=[
     h.real10!=null?`<div class="cellx"><div class="k">10Y Real Yield</div>
       <div class="v" style="color:${h.real10<1?'#0ECB81':'#F0B90B'}">${h.real10>0?'+':''}${f(h.real10)}%</div>
@@ -259,9 +227,15 @@ function render(d){
       <div class="s">the scoreboard for dollar credibility</div></div>`:'',
     h.breakeven!=null?`<div class="cellx"><div class="k">Expected Inflation 10Y</div>
       <div class="v">${f(h.breakeven)}%</div>
-      <div class="s">nominal minus real, priced by the market</div></div>`:''
-  ].join('');
+      <div class="s">nominal minus real, priced by the market</div></div>`:''].join('');
   $('regime').textContent=REGIME[reg]||'';
+
+  /* data freshness, so you know what is stale */
+  const parts=[];
+  if(h.real10_asof)parts.push(`Treasury yields as of ${h.real10_asof} (weekdays only)`);
+  if(h.markets_asof)parts.push(`Markets as of ${h.markets_asof}`);
+  parts.push('Backend runs 12:10 and 22:10 UTC. Use this for regime, never for entries.');
+  $('asof').textContent=parts.join(' · ');
 
   const c=[];
   if(h.real10_chg90!=null)c.push({t:`REAL 90D ${h.real10_chg90>0?'+':''}${h.real10_chg90}pp`,c:h.real10_chg90>0?'up':'dn'});
@@ -271,41 +245,49 @@ function render(d){
   (d.scorecard||[]).filter(s=>s.active).forEach(s=>c.push({t:'▲ '+s.name.toUpperCase(),c:'up'}));
   $('chips').innerHTML=c.map(x=>`<span class="chip ${x.c}">${x.t}</span>`).join('');
 
-  // base rates
+  /* FIX 2: show effective sample size next to raw n */
   if(d.base_rates&&reg){
     const nm={gold:'Gold',spx:'S&P 500',oil:'WTI crude',dxy:'Dollar',tlt:'Long bonds',copper:'Copper'};
     const S=["Low and falling","Low and rising","High and falling","High and rising"];
     $('baserates').innerHTML=`<p class="mech">Every session since 2004 tagged by real-yield state,
-      then forward 90-day returns measured. Current state <span class="pill"
+      then forward returns measured over the next <b>90 trading days (about 4 calendar months)</b>.
+      Current state <span class="pill"
       style="background:rgba(240,185,11,.15);color:#F0B90B">${reg.toUpperCase()}</span></p>
       <div style="overflow-x:auto"><table><tr><th>Asset</th>${S.map(s=>
         `<th style="${s===reg?'color:#F0B90B':''}">${s.replace(' and ','/')}</th>`).join('')}</tr>
       ${Object.entries(d.base_rates).map(([k,v])=>`<tr><td>${nm[k]||k}</td>${S.map(s=>{const r=v[s];
         return `<td style="${s===reg?'color:#F0B90B;font-weight:700':''}">${r?
-          `${r.median>0?'+':''}${r.median}%<br><span style="font-size:10px;color:#5A6875">${r.hit}% · n${r.n}</span>`
+          `${r.median>0?'+':''}${r.median}%<br><span style="font-size:10px;color:#5A6875">${r.hit}% · n<sub>eff</sub>${r.n_eff}</span>`
           :'—'}</td>`;}).join('')}</tr>`).join('')}</table></div>
-      <div class="note">Overlapping 90-day windows, so the effective sample is far smaller than n
-        suggests. A rough tilt, never a probability.</div>`;
+      <div class="warn">n<sub>eff</sub> counts how many times the regime <em>switched on</em>, not
+        how many days it lasted. A regime persists for months, so the raw day count massively
+        overstates independence. A cell reading n<sub>eff</sub> 6 rests on six episodes across
+        twenty-two years — enough to notice a tilt, nowhere near enough for a probability.</div>`;
   }
 
-  // scorecard
   if(d.scorecard&&d.scorecard.length){
-    $('scorecard').innerHTML=`<p class="mech">Each signal reports how often it fired, how often it
-      was right, and the base rate with no signal at all. Where hit barely beats base, the signal
-      is noise wearing a name.</p>
+    $('scorecard').innerHTML=`<p class="mech">Each signal reports how often it fired, how often it was
+      right, and the base rate with no signal at all. Where hit barely beats base, the signal is noise
+      wearing a name.</p>
       <div style="overflow-x:auto"><table>
-      <tr><th>Signal</th><th>Fired</th><th>Hit</th><th>Base</th><th>Edge</th><th>Median</th><th>Live</th></tr>
-      ${d.scorecard.map(s=>{const e=s.hit-s.base;return `<tr>
-        <td>${s.name}<div style="font-size:10.5px;color:#5A6875;font-family:Inter">${s.desc}</div></td>
-        <td>${s.fired}</td><td>${s.hit}%</td><td style="color:#5A6875">${s.base}%</td>
-        <td class="${e>0?'up':'down'}">${e>0?'+':''}${e}pp</td>
+      <tr><th>Signal</th><th>Fired</th><th>n<sub>eff</sub></th><th>Hit</th><th>Base</th><th>Edge</th><th>Median</th><th>Live</th></tr>
+      ${d.scorecard.map(s=>{const e=s.hit-s.base;const thin=s.n_eff<8;return `<tr>
+        <td>${s.name}<div style="font-size:10.5px;color:#5A6875;font-family:Inter">${s.desc}
+          <br>Horizon: ${s.horizon_label||s.horizon+' trading days'}</div></td>
+        <td style="color:#5A6875">${s.fired}</td>
+        <td class="${thin?'down':''}" style="font-weight:700">${s.n_eff}</td><td>${s.hit}%</td>
+        <td style="color:#5A6875">${s.base}%</td>
+        <td class="${e>0?'up':'down'}" style="font-weight:700">${e>0?'+':''}${e}pp</td>
         <td>${s.median>0?'+':''}${s.median}%</td>
         <td>${s.active?'<span class="pill" style="background:rgba(240,185,11,.15);color:#F0B90B">ON</span>'
           :'<span style="color:#2A3644">—</span>'}</td></tr>`;}).join('')}</table></div>
-      <div class="note">Edge is the only column that matters. A 70% hit against a 68% base is worth nothing.</div>`;
+      <div class="warn">FIRED counts days. n<sub>eff</sub> counts how many times the signal switched
+        on, which is the number that matters — a signal that fired 1,373 days across 5 episodes has
+        five observations, not 1,373. Any n<sub>eff</sub> below 8 is shown in red and should be read
+        as an anecdote. Edge is the only performance column worth reading, and only when
+        n<sub>eff</sub> supports it.</div>`;
   }
 
-  // fragility
   if(d.fragility){
     const fr=d.fragility,p=Math.round(fr.score*100);
     const col=fr.score>.66?'#F6465D':fr.score>.4?'#F0B90B':'#0ECB81';
@@ -313,55 +295,63 @@ function render(d){
     $('fragility').innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:baseline">
         <span class="tiny">FOREST DRYNESS</span>
-        <span class="num" style="font-size:22px;color:${col}">${p}<span style="font-size:12px">/100</span></span></div>
+        <span class="num" style="font-family:var(--mono);font-size:22px;color:${col}">${p}<span style="font-size:12px">/100</span></span></div>
       <div class="meter"><i style="width:${p}%;background:${col}"></i></div>
       <div class="tiny" style="display:flex;justify-content:space-between">
         <span>RESILIENT</span><span style="color:${col}">${fr.label.toUpperCase()}</span><span>FRAGILE</span></div>
-      <table style="margin-top:18px">${fr.parts.map(x=>
-        `<tr><td>${x.k}</td><td>${x.v}</td></tr>`).join('')}</table>
+      <table style="margin-top:18px">${fr.parts.map(x=>`<tr><td>${x.k}</td><td>${x.v}</td></tr>`).join('')}</table>
       ${Object.keys(w).length?`<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">
-        <div class="tiny" style="margin-bottom:10px">EQUAL-RISK WEIGHTS — volatility differs so much
-        that equal dollars are not equal bets. These give each holding the same risk contribution.</div>
+        <div class="tiny" style="margin-bottom:10px">EQUAL-RISK WEIGHTS — volatility differs so much that
+        equal dollars are not equal bets. These give each holding the same risk contribution.</div>
         <table><tr><th>Asset</th><th>Ann. vol</th><th>Weight</th></tr>
-        ${Object.entries(w).map(([s,pc])=>`<tr><td>${s}</td><td>${v[s]}%</td>
-          <td class="amb">${pc}%</td></tr>`).join('')}</table></div>`:''}
-      <div class="note">Fragility measures how dry the forest is, not when lightning strikes. It
-        should change position size. It must never generate an entry or an exit.</div>`;
+        ${Object.entries(w).map(([s,pc])=>`<tr><td>${s}</td><td>${v[s]}%</td><td class="amb">${pc}%</td></tr>`).join('')}
+        </table></div>`:''}
+      <div class="warn">${fr.disclosure||'Unvalidated heuristic with hand-chosen weights.'}
+        It should change position size. It must never generate an entry or an exit.</div>`;
   }
 
-  // panels
+  /* FIX 1 rendered: the strip and its caption now depend on the expected sign */
   const eps=d.episodes||[];
-  $('panels').innerHTML=(d.panels||[]).map(p=>`<div class="panel">
+  $('panels').innerHTML=(d.panels||[]).map(p=>{
+    const none=p.expect==='none';
+    const wn=p.working_now!=null?p.working_now:p.corr_now;
+    const ok=wn>0;
+    const verdict=none?'<b style="color:#5A6875">NO CLAIM</b>'
+      :`<b style="color:${ok?'#0ECB81':'#F6465D'}">${ok?'HOLDING':'INVERTED'}</b>`;
+    return `<div class="panel">
     <h3>${p.title}</h3><p class="mech">${p.mechanism}</p>
     <div class="legend"><span class="key"><i style="background:#2EBFD9"></i>${p.a.name}</span>
       <span class="key"><i style="background:#F0B90B"></i>${p.b.name}</span></div>
     ${chart(p,eps)}
-    <div class="tiny" style="margin-top:16px">ROLLING 120-DAY CORRELATION — above the line the
-      mechanism is working, below it the relationship has inverted.</div>
-    ${corrStrip(p)}
-    <div class="foot"><span>NOW <b style="color:${p.corr_now>0?'#0ECB81':'#F6465D'}">${p.corr_now>0?'+':''}${p.corr_now}</b>
-      · 60D ${p.corr_60d>0?'+':''}${p.corr_60d}</span>
-      ${p.regression?`<span>R² <b style="color:#EAEEF2">${p.regression.r2}</b> — explains ${Math.round(p.regression.r2*100)}% of moves</span>`:''}
+    <div class="tiny" style="margin-top:16px">MECHANISM CHECK — expected correlation is
+      <b style="color:#EAEEF2">${p.expect_text||''}</b>. ${none
+        ? 'The strip is grey because there is no same-day prediction to pass or fail.'
+        : 'Green means the mechanism is holding, red means it has inverted.'}</div>
+    ${workStrip(p)}
+    <div class="foot">
+      <span>NOW ${verdict} · raw corr ${p.corr_now>0?'+':''}${p.corr_now}</span>
+      ${p.regression?`<span>R² <b style="color:#EAEEF2">${p.regression.r2}</b> — explains
+        ${Math.round(p.regression.r2*100)}% of moves, n=${p.regression.n}</span>`:''}
       <span>${p.years}Y HISTORY</span></div>
-    ${p.note?`<div class="note">${p.note}</div>`:''}</div>`).join('')
+    ${p.note?`<div class="note">${p.note}</div>`:''}</div>`;}).join('')
     ||'<div class="panel err">No panels built. Check backend errors.</div>';
 
-  // lead-lag
   if(d.leadlag&&d.leadlag.best){
     const ll=d.leadlag,cv=ll.curve,mx=Math.max(...cv.map(x=>Math.abs(x.corr)))||1;
     $('leadlag').innerHTML=`<p class="mech">Correlation between oil's monthly move and the change in
-      expected inflation, tested at every delay from 0 to 180 days. The peak is how long the market
-      actually takes to pass an oil shock into inflation expectations.</p>
+      expected inflation, tested at every delay from 0 to 180 days, using non-overlapping observations.
+      The peak is how long the market actually takes to pass an oil shock into inflation expectations.</p>
       <div class="hist" style="height:88px">${cv.map(x=>`<i style="height:${Math.abs(x.corr)/mx*100}%;
         background:${x.corr>0?'#0ECB81':'#F6465D'};opacity:${x.lag===ll.best.lag?1:.35}"></i>`).join('')}</div>
       <div class="tiny" style="display:flex;justify-content:space-between"><span>0 DAYS</span><span>180 DAYS</span></div>
       <div class="foot"><span>PEAK AT <b class="amb">${ll.best.lag} DAYS</b></span>
-        <span>CORRELATION <b style="color:#EAEEF2">${ll.best.corr>0?'+':''}${ll.best.corr}</b></span></div>
-      <div class="note">The second-order effect's clock, measured rather than assumed. This is why a
-        war lifts oil today and pushes gold down months later.</div>`;
+        <span>CORRELATION <b style="color:#EAEEF2">${ll.best.corr>0?'+':''}${ll.best.corr}</b></span>
+        <span>n=${ll.best.n||'—'}</span></div>
+      <div class="warn">LIMITATION: measured on ${ll.window||5}-day changes, so a peak at zero means
+        "faster than ${ll.window||5} days", not "instant". No lag test can resolve a delay shorter
+        than its own measurement window. A peak <em>away</em> from zero is the informative case.</div>`;
   }
 
-  // cross-asset
   const rows=d.table||[];
   $('table').innerHTML=rows.length?`<div style="overflow-x:auto"><table>
     <tr><th>Asset</th><th>Last</th><th>σ 2Y</th><th>%ile</th><th>30D</th><th>90D</th><th>1Y</th><th>Vol</th><th></th></tr>
@@ -373,32 +363,36 @@ function render(d){
       <td class="${cl(r.chg1y)}">${sg(r.chg1y)}</td><td style="color:#5A6875">${r.vol}%</td>
       <td>${spark(r.spark)}</td></tr>`).join('')}</table></div>`:'<div class="err">No table data.</div>';
 
-  // analogue
+  /* FIX 4 rendered: episode spread is now shown as prominently as the median */
   const a=d.analogue;
   if(a){
     const rs=a.returns,mn=Math.min(...rs),mx=Math.max(...rs),rg=(mx-mn)||1;
     const bk=new Array(16).fill(0);
     rs.forEach(v=>bk[Math.min(15,Math.floor(((v-mn)/rg)*16))]++);
     const pk=Math.max(...bk);
-    $('analogue').innerHTML=`<p class="mech">Today's macro state — real-yield level and direction,
-      the curve, and the dollar's 90-day move — matched against every session since 2004. These are
-      the ${a.n} closest, and this is the distribution of what gold did over the next ${a.horizon} days.</p>
+    const thin=a.episodes<5;
+    $('analogue').innerHTML=`<p class="mech">Today's macro state — real-yield level and direction, the
+      curve, and the dollar's 90-day move — matched against every session since 2004. Matches are forced
+      at least ${a.min_gap_days} days apart so a single episode cannot be counted many times over.</p>
       <div class="hist">${bk.map(b=>`<i style="height:${(b/pk)*100}%;opacity:${.3+.6*(b/pk)}"></i>`).join('')}</div>
       <div class="tiny" style="display:flex;justify-content:space-between">
         <span>${f(mn,0)}%</span><span>${f(mx,0)}%</span></div>
       <div class="foot"><span>MEDIAN <b class="amb">${a.median>0?'+':''}${a.median}%</b></span>
         <span>P10–P90 <b style="color:#EAEEF2">${a.p10}% → ${a.p90>0?'+':''}${a.p90}%</b></span>
-        <span>POSITIVE <b style="color:#EAEEF2">${a.hit}%</b></span><span>N=${a.n}</span></div>
-      <div class="tiny" style="margin-top:12px">NEAREST: ${a.dates.join(' · ')}</div>
-      <div class="note">Read the <em>width</em>, not the middle. A range spanning both directions
-        means no reliable edge, and that is the useful finding.</div>`;
+        <span>POSITIVE <b style="color:#EAEEF2">${a.hit}%</b></span>
+        <span>N=${a.n} across <b style="color:${thin?'#F6465D':'#EAEEF2'}">${a.episodes} years</b></span></div>
+      <div class="tiny" style="margin-top:12px">SPAN: ${a.span} · ${a.dates.join(' · ')}</div>
+      ${thin?`<div class="warn">Only ${a.episodes} distinct years are represented. That is too few for
+        the median or hit rate to mean anything — you are looking at one or two historical episodes,
+        not a distribution. Read this as "today resembles ${a.span}" and nothing more.</div>`
+      :`<div class="note">Read the <em>width</em>, not the middle. A range spanning both directions means
+        no reliable edge, and that is the useful finding.</div>`}`;
   }
 
-  // coins
   $('coins').innerHTML=Object.entries(d.coins||{}).map(([s,c])=>`<div class="coin">
     <div style="display:flex;justify-content:space-between;align-items:baseline">
       <span class="sym">${s}</span>
-      <span class="num ${cl(c.chg30)}" style="font-size:11px">${sg(c.chg30)}</span></div>
+      <span class="${cl(c.chg30)}" style="font-family:var(--mono);font-size:11px">${sg(c.chg30)}</span></div>
     <div class="px">$${f(c.price,c.price<1?4:c.price<100?2:0)}</div>
     <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line)">
       <div class="kv"><span>RSI</span><b>${c.rsi} · ${c.rsi_z>0?'+':''}${c.rsi_z}σ</b></div>
