@@ -124,14 +124,26 @@ def lead_lag(driver, target, max_lag_days=120, window=5):
     return {"best": best, "curve": curve, "window": window} if best else None
 
 
-def episode_count(cond):
+def episode_count(cond, min_run=21):
     """
-    M3 FIX. The number of times a condition SWITCHES ON. Signals persist for
-    months, so fired-days divided by horizon badly overstates independence.
-    This counts distinct episodes, which is the honest denominator.
+    M3 FIX v2. Counting every switch-on still overstated independence, because a
+    condition defined by a threshold flickers on and off whenever the underlying
+    hovers near that threshold. The 90-day change in real yields crosses zero
+    repeatedly, which produced ~80 "episodes" that were really boundary noise.
+
+    An episode now only counts if the condition HOLDS for at least `min_run`
+    trading days (default one month). That is the number of genuinely distinct,
+    sustained occurrences — the honest denominator.
     """
     c = cond.fillna(False).astype(bool)
-    return int((c & ~c.shift(1, fill_value=False)).sum())
+    if not len(c):
+        return 0
+    grp = (c != c.shift(fill_value=False)).cumsum()
+    n = 0
+    for _, run in c.groupby(grp):
+        if bool(run.iloc[0]) and len(run) >= min_run:
+            n += 1
+    return int(n)
 
 
 def get_markets():
